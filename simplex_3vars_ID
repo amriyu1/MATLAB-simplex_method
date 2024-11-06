@@ -1,0 +1,94 @@
+% Contoh diambil dari buku: Advanced Engineering Mathematics 10th Edition
+% Problem Set 22.3 Exercise 13.
+
+function simplex_method_3vars
+    % Bersihkan layar dan variabel sebelumnya
+    clc;
+    clear;
+    
+    % Input Fungsi Tujuan dan Batasan secara Dinamis
+    % Fungsi tujuan: Maksimalkan Z = c1*x1 + c2*x2 + ... + cn*xn
+    % c adalah koefisien dari fungsi tujuan
+    % Contoh perubahan variabel fungsi tujuan dan batasan:
+   
+    c = [-34, -29, -32];  % Fungsi tujuan: Z = 34x1 + 29x2 + 32x3 (untuk maximasi, c negatif)
+    
+    % Koefisien batasan
+    A = [8, 2, 1;    % 8x1 + 2x2 + 1x3 <= 54
+         3, 8, 2;    % 3x1 + 8x2 + 2x3 <= 59
+         1, 1, 5];   % 1x1 + 1x2 + 5x3 <= 39
+    
+    % Sisi kanan dari batasan
+    b = [54; 59; 39]; % Batasan yang ada pada sisi kanan (54, 59, 39)
+
+    % Menampilkan Fungsi Tujuan dan Fungsi Batasan
+    disp('Fungsi Tujuan:')
+    disp(['Z = ', num2str(abs(c(1))), 'x1 + ', num2str(abs(c(2))), 'x2 + ', num2str(abs(c(3))), 'x3'])
+    
+    disp('Fungsi Batasan:')
+    for i = 1:size(A, 1)
+        disp([num2str(A(i, 1)), 'x1 + ', num2str(A(i, 2)), 'x2 + ', num2str(A(i, 3)), 'x3 <= ', num2str(b(i))])
+    end
+    
+    [m, n] = size(A);  % Ukuran matriks A
+    
+    % Membuat tableau awal dengan baris fungsi tujuan di atas
+    tableau = [c, zeros(1, m+1); A, eye(m), b];  % Fungsi tujuan di baris pertama, lalu batasan
+    
+    % Menampilkan tableau awal
+    disp('Tableau Awal:')
+    disp(tableau)
+    
+    % Iterasi Simplex
+    tolerance = 1e-6;
+    while any(tableau(1, 1:n) < -tolerance)  % Selama ada koefisien negatif di baris fungsi tujuan
+        % Menentukan kolom pivot (mencari elemen negatif di baris fungsi tujuan)
+        [~, pivot_col] = min(tableau(1, 1:n));
+        
+        % Menentukan baris pivot (rasio minimum)
+        ratios = tableau(2:m+1, end) ./ tableau(2:m+1, pivot_col);
+        ratios(ratios <= tolerance) = inf;  % Abaikan rasio negatif atau nol
+        [~, pivot_row] = min(ratios);
+        
+        % Menampilkan pivot yang dipilih
+        disp(['Pivot di: Baris ', num2str(pivot_row), ', Kolom ', num2str(pivot_col)])
+        
+        % Membuat baris pivot baru
+        pivot_value = tableau(pivot_row+1, pivot_col);  % +1 karena baris pertama adalah fungsi tujuan
+        tableau(pivot_row+1, :) = tableau(pivot_row+1, :) / pivot_value;
+        
+        % Mengubah baris lain
+        for i = 1:m+1
+            if i ~= pivot_row + 1  % Hanya baris selain baris pivot yang diperbarui
+                tableau(i, :) = tableau(i, :) - tableau(i, pivot_col) * tableau(pivot_row+1, :);
+            end
+        end
+        
+        % Menampilkan tableau setelah setiap iterasi
+        disp('Tableau Setelah Iterasi:')
+        disp(tableau)
+    end
+    
+    % Menampilkan hasil akhir
+    disp('Solusi Optimal Ditemukan:')
+    disp('Basic Feasible Solution:')
+    
+    % Mengidentifikasi variabel dasar dan menghitung solusi optimal
+    optimal_solution = zeros(n, 1);
+    for j = 1:n
+        column = tableau(2:m+1, j);  % Memeriksa baris di bawah fungsi tujuan
+        if sum(column == 1) == 1 && sum(column) == 1
+            row_index = find(column == 1);
+            optimal_solution(j) = tableau(row_index+1, end);  % +1 untuk menyesuaikan dengan indeks
+        end
+    end
+    
+    % Menampilkan setiap variabel keputusan (x1, x2, x3, dll.) dengan nilainya
+    for j = 1:n
+        disp(['x', num2str(j), ' = ', num2str(optimal_solution(j))])
+    end
+    
+    % Menampilkan nilai optimal dari fungsi tujuan
+    disp('Nilai Optimal dari Fungsi Tujuan:')
+    disp(tableau(1, end))  % Nilai optimal sudah ada di baris pertama, kolom terakhir
+end
