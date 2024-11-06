@@ -1,0 +1,94 @@
+% Example taken from the book: Advanced Engineering Mathematics 10th Edition
+% Problem Set 22.3 Exercise 13.
+
+function simplex_method_3vars
+    % Clear screen and previous variables
+    clc;
+    clear;
+    
+    % Input the Objective Function and Constraints dynamically
+    % Objective function: Maximize Z = c1*x1 + c2*x2 + ... + cn*xn
+    % c is the coefficient of the objective function
+    % Example of changing the variables of the objective function and constraints:
+   
+    c = [-34, -29, -32];  % Objective function: Z = 34x1 + 29x2 + 32x3 (for maximization, c is negative)
+    
+    % Coefficients of the constraints
+    A = [8, 2, 1;    % 8x1 + 2x2 + 1x3 <= 54
+         3, 8, 2;    % 3x1 + 8x2 + 2x3 <= 59
+         1, 1, 5];   % 1x1 + 1x2 + 5x3 <= 39
+    
+    % Right-hand side of the constraints
+    b = [54; 59; 39]; % Constraints on the right-hand side (54, 59, 39)
+
+    % Display Objective Function and Constraints
+    disp('Objective Function:')
+    disp(['Z = ', num2str(abs(c(1))), 'x1 + ', num2str(abs(c(2))), 'x2 + ', num2str(abs(c(3))), 'x3'])
+    
+    disp('Constraints:')
+    for i = 1:size(A, 1)
+        disp([num2str(A(i, 1)), 'x1 + ', num2str(A(i, 2)), 'x2 + ', num2str(A(i, 3)), 'x3 <= ', num2str(b(i))])
+    end
+    
+    [m, n] = size(A);  % Size of matrix A
+    
+    % Create the initial tableau with the objective function row at the top
+    tableau = [c, zeros(1, m+1); A, eye(m), b];  % Objective function in the first row, followed by constraints
+    
+    % Display the initial tableau
+    disp('Initial Tableau:')
+    disp(tableau)
+    
+    % Simplex Iteration
+    tolerance = 1e-6;
+    while any(tableau(1, 1:n) < -tolerance)  % While there are negative coefficients in the objective function row
+        % Determine the pivot column (search for negative elements in the objective function row)
+        [~, pivot_col] = min(tableau(1, 1:n));
+        
+        % Determine the pivot row (minimum ratio)
+        ratios = tableau(2:m+1, end) ./ tableau(2:m+1, pivot_col);
+        ratios(ratios <= tolerance) = inf;  % Ignore negative or zero ratios
+        [~, pivot_row] = min(ratios);
+        
+        % Display the selected pivot
+        disp(['Pivot at: Row ', num2str(pivot_row), ', Column ', num2str(pivot_col)])
+        
+        % Create the new pivot row
+        pivot_value = tableau(pivot_row+1, pivot_col);  % +1 because the first row is the objective function
+        tableau(pivot_row+1, :) = tableau(pivot_row+1, :) / pivot_value;
+        
+        % Update the other rows
+        for i = 1:m+1
+            if i ~= pivot_row + 1  % Only update rows that are not the pivot row
+                tableau(i, :) = tableau(i, :) - tableau(i, pivot_col) * tableau(pivot_row+1, :);
+            end
+        end
+        
+        % Display the tableau after each iteration
+        disp('Tableau After Iteration:')
+        disp(tableau)
+    end
+    
+    % Display the final result
+    disp('Optimal Solution Found:')
+    disp('Basic Feasible Solution:')
+    
+    % Identify basic variables and calculate the optimal solution
+    optimal_solution = zeros(n, 1);
+    for j = 1:n
+        column = tableau(2:m+1, j);  % Check the rows below the objective function
+        if sum(column == 1) == 1 && sum(column) == 1
+            row_index = find(column == 1);
+            optimal_solution(j) = tableau(row_index+1, end);  % +1 to adjust the index
+        end
+    end
+    
+    % Display each decision variable (x1, x2, x3, etc.) with its value
+    for j = 1:n
+        disp(['x', num2str(j), ' = ', num2str(optimal_solution(j))])
+    end
+    
+    % Display the optimal value of the objective function
+    disp('Optimal Value of the Objective Function:')
+    disp(tableau(1, end))  % The optimal value is already in the first row, last column
+end
